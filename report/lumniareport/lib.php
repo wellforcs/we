@@ -20,14 +20,27 @@ function report_lumniareport_extend_navigation_course($navigation, $course, $cou
     if (has_capability('report/lumniareport:view', $coursecontext)) {
         $url = new moodle_url('/report/lumniareport/index.php', ['course' => $course->id]);
         $name = get_string('coursereport', 'report_lumniareport');
-        $node = $navigation->add(
-            $name,
-            $url,
-            navigation_node::TYPE_SETTING,
-            null,
-            'report_lumniareport',
-            new pix_icon('i/report', $name)
-        );
-        $node->showinflatnavigation = true;
+        $reportnode = $navigation->get('coursereports');
+        if ($reportnode) {
+            $node = $reportnode->add(
+                $name,
+                $url,
+                navigation_node::TYPE_SETTING,
+                null,
+                'report_lumniareport',
+                new pix_icon('i/report', $name)
+            );
+        } else {
+            // Fallback caso o nó coursereports não exista.
+            $node = $navigation->add(
+                $name,
+                $url,
+                navigation_node::TYPE_SETTING,
+                null,
+                'report_lumniareport',
+                new pix_icon('i/report', $name)
+            );
+            $node->showinflatnavigation = true;
+        }
     }
 }
