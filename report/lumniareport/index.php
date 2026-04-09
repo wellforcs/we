@@ -153,7 +153,7 @@ if ($courseid) {
     // Painel de Filtros e Exportação (HTML Nativo)
     echo html_writer::start_div('card mb-4');
     echo html_writer::start_div('card-body');
-    echo html_writer::tag('h5', 'Filtros e Exportação', ['class' => 'card-title']);
+    echo html_writer::tag('h5', get_string('filtersexport', 'report_lumniareport'), ['class' => 'card-title']);
 
     $form_action = new moodle_url('/report/lumniareport/export.php');
     echo '<form method="GET" action="' . $form_action . '" id="form-export-lumniareport">';
@@ -161,15 +161,15 @@ if ($courseid) {
 
     echo '<div class="row mb-3">';
     echo '  <div class="col-md-3">';
-    echo '    <label for="datainicio" class="form-label">Data Inicial</label>';
+    echo '    <label for="datainicio" class="form-label">' . get_string('startdate', 'report_lumniareport') . '</label>';
     echo '    <input type="date" id="datainicio" name="datainicio" class="form-control" value="' . s($filter_datainicio) . '">';
     echo '  </div>';
     echo '  <div class="col-md-3">';
-    echo '    <label for="datafim" class="form-label">Data Final</label>';
+    echo '    <label for="datafim" class="form-label">' . get_string('enddate', 'report_lumniareport') . '</label>';
     echo '    <input type="date" id="datafim" name="datafim" class="form-control" value="' . s($filter_datafim) . '">';
     echo '  </div>';
     echo '  <div class="col-md-3">';
-    echo '    <label for="format_export" class="form-label">Formato</label>';
+    echo '    <label for="format_export" class="form-label">' . get_string('format', 'report_lumniareport') . '</label>';
     echo '    <select id="format_export" name="format_export" class="form-select">';
     echo '      <option value="csv">CSV</option>';
     echo '      <option value="xlsx">XLSX</option>';
@@ -179,18 +179,18 @@ if ($courseid) {
     echo '</div>';
 
     echo '<div class="mb-3">';
-    echo '  <p class="mb-1 fw-bold">Colunas Adicionais (além do Nome e Email)</p>';
+    echo '  <p class="mb-1 fw-bold">' . get_string('additionalcols', 'report_lumniareport') . '</p>';
     echo '  <div class="form-check form-switch form-check-inline">';
     echo '    <input class="form-check-input coluna-toggle" type="checkbox" id="col_status" name="colunas[]" value="status" checked>';
-    echo '    <label class="form-check-label" for="col_status">Status</label>';
+    echo '    <label class="form-check-label" for="col_status">' . get_string('colstatus', 'report_lumniareport') . '</label>';
     echo '  </div>';
     echo '  <div class="form-check form-switch form-check-inline">';
     echo '    <input class="form-check-input coluna-toggle" type="checkbox" id="col_inicio" name="colunas[]" value="inicio">';
-    echo '    <label class="form-check-label" for="col_inicio">Data de Início</label>';
+    echo '    <label class="form-check-label" for="col_inicio">' . get_string('colstart', 'report_lumniareport') . '</label>';
     echo '  </div>';
     echo '  <div class="form-check form-switch form-check-inline">';
     echo '    <input class="form-check-input coluna-toggle" type="checkbox" id="col_fim" name="colunas[]" value="fim">';
-    echo '    <label class="form-check-label" for="col_fim">Data de Conclusão</label>';
+    echo '    <label class="form-check-label" for="col_fim">' . get_string('colend', 'report_lumniareport') . '</label>';
     echo '  </div>';
     echo '</div>';
 
@@ -199,10 +199,10 @@ if ($courseid) {
     echo '</div>';
 
     echo '<div class="d-flex gap-2">';
-    echo '  <button type="submit" class="btn btn-primary">Exportar Relatório</button>';
+    echo '  <button type="submit" class="btn btn-primary">' . get_string('exportreport', 'report_lumniareport') . '</button>';
     // Adicionar um botão auxiliar apenas para recarregar a tela com os filtros.
     $current_url = new moodle_url('/report/lumniareport/index.php');
-    echo '  <button type="submit" formaction="' . $current_url . '" class="btn btn-outline-secondary">Aplicar Filtro em Tela</button>';
+    echo '  <button type="submit" formaction="' . $current_url . '" class="btn btn-outline-secondary">' . get_string('applyfilter', 'report_lumniareport') . '</button>';
     echo '</div>';
 
     echo '</form>';
@@ -213,9 +213,9 @@ if ($courseid) {
     echo html_writer::start_tag('table', ['class' => 'table table-striped table-hover']);
     echo html_writer::start_tag('thead');
     echo html_writer::start_tag('tr');
-    echo html_writer::tag('th', 'Nome');
-    echo html_writer::tag('th', 'Email');
-    echo html_writer::tag('th', 'Status');
+    echo html_writer::tag('th', get_string('colname', 'report_lumniareport'));
+    echo html_writer::tag('th', get_string('colemail', 'report_lumniareport'));
+    echo html_writer::tag('th', get_string('colstatus', 'report_lumniareport'));
     echo html_writer::end_tag('tr');
     echo html_writer::end_tag('thead');
 
@@ -240,7 +240,7 @@ if ($courseid) {
 
     if (empty($users)) {
         echo html_writer::start_tag('tr');
-        echo html_writer::tag('td', 'Nenhum dado encontrado para o curso.', ['colspan' => '3', 'class' => 'text-center']);
+        echo html_writer::tag('td', get_string('nodatafound', 'report_lumniareport'), ['colspan' => '3', 'class' => 'text-center']);
         echo html_writer::end_tag('tr');
     }
 

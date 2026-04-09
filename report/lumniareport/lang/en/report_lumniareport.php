@@ -32,3 +32,18 @@ $string['exportpdf'] = 'Export as PDF';
 $string['selectall'] = 'Select All';
 $string['deselectall'] = 'Deselect All';
 $string['maxpdfcolumns'] = 'Maximum of 2 additional fields in PDF';
+
+// Filtros e UI
+$string['filtersexport'] = 'Filters and Export';
+$string['startdate'] = 'Start Date';
+$string['enddate'] = 'End Date';
+$string['format'] = 'Format';
+$string['additionalcols'] = 'Additional Columns (besides Name and Email)';
+$string['colstatus'] = 'Status';
+$string['colstart'] = 'Start Date';
+$string['colend'] = 'Completion Date';
+$string['exportreport'] = 'Export Report';
+$string['applyfilter'] = 'Apply Screen Filter';
+$string['nodatafound'] = 'No data found for this course.';
+$string['colname'] = 'Name';
+$string['colemail'] = 'Email';

@@ -32,3 +32,18 @@ $string['exportpdf'] = 'Exportar PDF';
 $string['selectall'] = 'Selecionar Todos';
 $string['deselectall'] = 'Desmarcar Todos';
 $string['maxpdfcolumns'] = 'Máximo de 2 campos adicionais no PDF';
+
+// Filtros e UI
+$string['filtersexport'] = 'Filtros e Exportação';
+$string['startdate'] = 'Data Inicial';
+$string['enddate'] = 'Data Final';
+$string['format'] = 'Formato';
+$string['additionalcols'] = 'Colunas Adicionais (além do Nome e Email)';
+$string['colstatus'] = 'Status';
+$string['colstart'] = 'Data de Início';
+$string['colend'] = 'Data de Conclusão';
+$string['exportreport'] = 'Exportar Relatório';
+$string['applyfilter'] = 'Aplicar Filtro em Tela';
+$string['nodatafound'] = 'Nenhum dado encontrado para o curso.';
+$string['colname'] = 'Nome';
+$string['colemail'] = 'Email';
