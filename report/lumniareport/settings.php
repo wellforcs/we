@@ -13,7 +13,7 @@ if ($hassiteconfig) {
     // Registra a página como admin_externalpage para compatibilidade com admin_externalpage_setup no index.php
     $ADMIN->add('reports', new admin_externalpage(
         'reportlumniareport',
-        get_string('pluginname', 'report_lumniareport'),
+        report_lumniareport_get_string('pluginname', 'Lumniareport'),
         new moodle_url('/report/lumniareport/index.php'),
         'report/lumniareport:view'
     ));

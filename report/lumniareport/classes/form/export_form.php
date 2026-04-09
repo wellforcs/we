@@ -30,11 +30,11 @@ class export_form extends \moodleform {
 
         require_once(__DIR__ . '/../../lib.php');
 
-        $mform->addElement('header', 'filtersexport_hdr', get_string('filtersexport', 'report_lumniareport'));
+        $mform->addElement('header', 'filtersexport_hdr', report_lumniareport_get_string('filtersexport', 'Filtros e Exportação'));
 
         // Date Selectors
-        $mform->addElement('date_selector', 'datainicio', get_string('startdate', 'report_lumniareport'), ['optional' => true]);
-        $mform->addElement('date_selector', 'datafim', get_string('enddate', 'report_lumniareport'), ['optional' => true]);
+        $mform->addElement('date_selector', 'datainicio', report_lumniareport_get_string('startdate', 'Data Inicial'), ['optional' => true]);
+        $mform->addElement('date_selector', 'datafim', report_lumniareport_get_string('enddate', 'Data Final'), ['optional' => true]);
 
         // Export Format
         $formats = [
@@ -42,11 +42,11 @@ class export_form extends \moodleform {
             'xlsx' => 'XLSX',
             'pdf' => 'PDF'
         ];
-        $mform->addElement('select', 'format_export', get_string('format', 'report_lumniareport'), $formats);
+        $mform->addElement('select', 'format_export', report_lumniareport_get_string('format', 'Formato'), $formats);
         $mform->setDefault('format_export', 'csv');
 
         // Checkboxes for extra columns (dinâmicos do banco e do core)
-        $mform->addElement('header', 'cols_hdr', get_string('additionalcols', 'report_lumniareport'));
+        $mform->addElement('header', 'cols_hdr', report_lumniareport_get_string('additionalcols', 'Colunas Adicionais (além do Nome e Email)'));
 
         $available_cols = report_lumniareport_get_available_columns();
         foreach ($available_cols as $colkey => $col) {
@@ -60,8 +60,8 @@ class export_form extends \moodleform {
         }
 
         // PDF Background Upload
-        $mform->addElement('header', 'pdf_hdr', get_string('pdfsettings', 'report_lumniareport'));
-        $mform->addElement('filemanager', 'pdfbackground_filemanager', get_string('pdfbackground', 'report_lumniareport'), null, ['subdirs' => 0, 'maxfiles' => 1, 'accepted_types' => ['.jpg', '.png', '.jpeg']]);
+        $mform->addElement('header', 'pdf_hdr', report_lumniareport_get_string('pdfsettings', 'Configurações de PDF'));
+        $mform->addElement('filemanager', 'pdfbackground_filemanager', report_lumniareport_get_string('pdfbackground', 'Imagem de Fundo (PDF)'), null, ['subdirs' => 0, 'maxfiles' => 1, 'accepted_types' => ['.jpg', '.png', '.jpeg']]);
 
         // Hide PDF settings if format is not PDF.
         $mform->hideIf('pdf_hdr', 'format_export', 'neq', 'pdf');
@@ -69,8 +69,8 @@ class export_form extends \moodleform {
 
         // Action Buttons
         $buttonarray = [];
-        $buttonarray[] = &$mform->createElement('submit', 'submitbutton', get_string('exportreport', 'report_lumniareport'));
-        $buttonarray[] = &$mform->createElement('submit', 'applyfilters', get_string('applyfilter', 'report_lumniareport'), ['class' => 'btn-secondary']);
+        $buttonarray[] = &$mform->createElement('submit', 'submitbutton', report_lumniareport_get_string('exportreport', 'Exportar Relatório'));
+        $buttonarray[] = &$mform->createElement('submit', 'applyfilters', report_lumniareport_get_string('applyfilter', 'Aplicar Filtro em Tela'), ['class' => 'btn-secondary']);
         $mform->addGroup($buttonarray, 'buttonar', '', ' ', false);
 
         $mform->closeHeaderBefore('buttonar');

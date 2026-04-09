@@ -123,8 +123,8 @@ $export_data = [];
 
 // Header Dinâmico
 $header = [
-    get_string('colname', 'report_lumniareport'),
-    get_string('colemail', 'report_lumniareport')
+    report_lumniareport_get_string('colname', 'Nome'),
+    report_lumniareport_get_string('colemail', 'Email')
 ];
 
 foreach ($colunas as $col_id) {
@@ -141,11 +141,11 @@ if ($format === 'pdf' && count($colunas) > 2) {
 }
 
 foreach ($users as $u) {
-    $status = get_string('notstarted', 'report_lumniareport');
+    $status = report_lumniareport_get_string('notstarted', 'Não Iniciados');
     if (!empty($u->timecompleted)) {
-        $status = get_string('certified', 'report_lumniareport');
+        $status = report_lumniareport_get_string('certified', 'Certificados (Concluídos)');
     } elseif (!empty($u->timestarted)) {
-        $status = get_string('inprogress', 'report_lumniareport');
+        $status = report_lumniareport_get_string('inprogress', 'Em Progresso');
     }
 
     $row = [fullname($u), $u->email];
@@ -157,6 +157,15 @@ foreach ($users as $u) {
             $row[] = !empty($u->timestarted) ? userdate($u->timestarted) : '-';
         } elseif ($col_id === 'fim') {
             $row[] = !empty($u->timecompleted) ? userdate($u->timecompleted) : '-';
+        } elseif ($col_id === 'tempo') {
+            if (!empty($u->timestarted) && !empty($u->timecompleted)) {
+                $seconds = $u->timecompleted - $u->timestarted;
+            } elseif (!empty($u->timestarted)) {
+                $seconds = time() - $u->timestarted;
+            } else {
+                $seconds = 0;
+            }
+            $row[] = report_lumniareport_format_time_elapsed($seconds);
         } elseif (isset($available_cols[$col_id]) && $available_cols[$col_id]->type === 'custom') {
             $custom_field_prop = 'custom_' . $available_cols[$col_id]->fieldid;
             $row[] = isset($u->$custom_field_prop) ? $u->$custom_field_prop : '-';
@@ -198,7 +207,7 @@ if ($format === 'xlsx') {
 
     // Configurar Fonte PDF
     $pdf->SetFont('helvetica', 'B', 16);
-    $pdf->Cell(0, 10, get_string('dashboardandexport', 'report_lumniareport'), 0, 1, 'C');
+    $pdf->Cell(0, 10, report_lumniareport_get_string('dashboardandexport', 'Dashboard e Exportação'), 0, 1, 'C');
     $pdf->Ln(10);
 
     $pdf->SetFont('helvetica', 'B', 12);

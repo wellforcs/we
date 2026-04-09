@@ -24,7 +24,7 @@ if ($courseid) {
     $PAGE->set_url('/report/lumniareport/index.php', ['course' => $courseid]);
     $PAGE->set_context($context);
     $PAGE->set_pagelayout('report');
-    $PAGE->set_title($course->shortname . ': ' . get_string('dashboardandexport', 'report_lumniareport'));
+    $PAGE->set_title($course->shortname . ': ' . report_lumniareport_get_string('dashboardandexport', 'Dashboard e Exportação'));
     $PAGE->set_heading($course->fullname);
 
     // Configurar o menu ativo para o Moodle 4.x (aba relatórios).
@@ -39,12 +39,12 @@ if ($courseid) {
 
     $PAGE->set_url('/report/lumniareport/index.php');
     $PAGE->set_context($context);
-    $PAGE->set_title(get_string('pluginname', 'report_lumniareport'));
-    $PAGE->set_heading(get_string('pluginname', 'report_lumniareport'));
+    $PAGE->set_title(report_lumniareport_get_string('pluginname', 'Lumniareport'));
+    $PAGE->set_heading(report_lumniareport_get_string('pluginname', 'Lumniareport'));
 }
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('dashboardandexport', 'report_lumniareport'));
+echo $OUTPUT->heading(report_lumniareport_get_string('dashboardandexport', 'Dashboard e Exportação'));
 
 // Obter filtros da URL, se aplicáveis.
 $filter_datainicio = optional_param('datainicio', '', PARAM_TEXT);
@@ -139,7 +139,7 @@ echo html_writer::start_div('dashboard-container row');
 // Not Started
 echo html_writer::start_div('col-md-4');
 echo html_writer::start_div('card text-white bg-secondary mb-3');
-echo html_writer::div(get_string('notstarted', 'report_lumniareport'), 'card-header');
+echo html_writer::div(report_lumniareport_get_string('notstarted', 'Não Iniciados'), 'card-header');
 echo html_writer::start_div('card-body');
 echo html_writer::tag('h5', $notstarted, ['class' => 'card-title']);
 echo html_writer::end_div();
@@ -149,7 +149,7 @@ echo html_writer::end_div();
 // In Progress
 echo html_writer::start_div('col-md-4');
 echo html_writer::start_div('card text-white bg-primary mb-3');
-echo html_writer::div(get_string('inprogress', 'report_lumniareport'), 'card-header');
+echo html_writer::div(report_lumniareport_get_string('inprogress', 'Em Progresso'), 'card-header');
 echo html_writer::start_div('card-body');
 echo html_writer::tag('h5', $inprogress, ['class' => 'card-title']);
 echo html_writer::end_div();
@@ -159,7 +159,7 @@ echo html_writer::end_div();
 // Certified
 echo html_writer::start_div('col-md-4');
 echo html_writer::start_div('card text-white bg-success mb-3');
-echo html_writer::div(get_string('certified', 'report_lumniareport'), 'card-header');
+echo html_writer::div(report_lumniareport_get_string('certified', 'Certificados (Concluídos)'), 'card-header');
 echo html_writer::start_div('card-body');
 echo html_writer::tag('h5', $certified, ['class' => 'card-title']);
 echo html_writer::end_div();
@@ -171,7 +171,7 @@ echo html_writer::end_div(); // Fim do dashboard.
 if ($courseid) {
     // Adicionar seção de Opções de Exportação e Tabela de Dados.
     echo html_writer::start_div('mt-4');
-    echo html_writer::tag('h3', get_string('dashboardandexport', 'report_lumniareport'));
+    echo html_writer::tag('h3', report_lumniareport_get_string('dashboardandexport', 'Dashboard e Exportação'));
 
     // Painel de Filtros e Exportação (Usando Moodle Form API)
     echo html_writer::start_div('card mb-4');
@@ -204,8 +204,8 @@ if ($courseid) {
     echo html_writer::start_tag('table', ['class' => 'table table-striped table-hover']);
     echo html_writer::start_tag('thead');
     echo html_writer::start_tag('tr');
-    echo html_writer::tag('th', get_string('colname', 'report_lumniareport'));
-    echo html_writer::tag('th', get_string('colemail', 'report_lumniareport'));
+    echo html_writer::tag('th', report_lumniareport_get_string('colname', 'Nome'));
+    echo html_writer::tag('th', report_lumniareport_get_string('colemail', 'Email'));
 
     // Adicionar cabeçalhos opcionais baseados na seleção do usuário (incluindo custom fields).
     $colspan = 2;
@@ -222,11 +222,11 @@ if ($courseid) {
     echo html_writer::start_tag('tbody');
 
     foreach ($users as $u) {
-        $status = get_string('notstarted', 'report_lumniareport');
+        $status = report_lumniareport_get_string('notstarted', 'Não Iniciados');
         if (!empty($u->timecompleted)) {
-            $status = get_string('certified', 'report_lumniareport');
+            $status = report_lumniareport_get_string('certified', 'Certificados (Concluídos)');
         } elseif (!empty($u->timestarted)) {
-            $status = get_string('inprogress', 'report_lumniareport');
+            $status = report_lumniareport_get_string('inprogress', 'Em Progresso');
         }
 
         $fullname = fullname($u);
@@ -246,6 +246,15 @@ if ($courseid) {
                 } elseif ($colkey === 'fim') {
                     $fim_text = !empty($u->timecompleted) ? userdate($u->timecompleted) : '-';
                     echo html_writer::tag('td', $fim_text);
+                } elseif ($colkey === 'tempo') {
+                    if (!empty($u->timestarted) && !empty($u->timecompleted)) {
+                        $seconds = $u->timecompleted - $u->timestarted;
+                    } elseif (!empty($u->timestarted)) {
+                        $seconds = time() - $u->timestarted;
+                    } else {
+                        $seconds = 0;
+                    }
+                    echo html_writer::tag('td', report_lumniareport_format_time_elapsed($seconds));
                 } elseif ($col->type === 'custom') {
                     $custom_field_prop = 'custom_' . $col->fieldid;
                     $custom_text = isset($u->$custom_field_prop) ? $u->$custom_field_prop : '-';
@@ -259,7 +268,7 @@ if ($courseid) {
 
     if (empty($users)) {
         echo html_writer::start_tag('tr');
-        echo html_writer::tag('td', get_string('nodatafound', 'report_lumniareport'), ['colspan' => $colspan, 'class' => 'text-center']);
+        echo html_writer::tag('td', report_lumniareport_get_string('nodatafound', 'Nenhum dado encontrado para o curso.'), ['colspan' => $colspan, 'class' => 'text-center']);
         echo html_writer::end_tag('tr');
     }
 
@@ -272,7 +281,7 @@ if ($courseid) {
 } else {
     // Modo Administrador no nível do sistema: Exigir seletor de cursos.
     echo html_writer::start_div('alert alert-info mt-4');
-    echo get_string('selectcourse', 'report_lumniareport');
+    echo report_lumniareport_get_string('selectcourse', 'Selecione um curso para visualizar o relatório');
 
     // Exibir um select básico de cursos para redirecionar o admin
     global $DB;
