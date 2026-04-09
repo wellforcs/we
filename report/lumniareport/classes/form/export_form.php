@@ -28,6 +28,8 @@ class export_form extends \moodleform {
         $mform->addElement('hidden', 'course');
         $mform->setType('course', PARAM_INT);
 
+        require_once(__DIR__ . '/../../lib.php');
+
         $mform->addElement('header', 'filtersexport_hdr', get_string('filtersexport', 'report_lumniareport'));
 
         // Date Selectors
@@ -43,14 +45,19 @@ class export_form extends \moodleform {
         $mform->addElement('select', 'format_export', get_string('format', 'report_lumniareport'), $formats);
         $mform->setDefault('format_export', 'csv');
 
-        // Checkboxes for extra columns.
+        // Checkboxes for extra columns (dinâmicos do banco e do core)
         $mform->addElement('header', 'cols_hdr', get_string('additionalcols', 'report_lumniareport'));
 
-        $mform->addElement('advcheckbox', 'col_status', get_string('colstatus', 'report_lumniareport'), '', ['group' => 1], [0, 1]);
-        $mform->setDefault('col_status', 1);
+        $available_cols = report_lumniareport_get_available_columns();
+        foreach ($available_cols as $colkey => $col) {
+            // Em HTML, Moodle injeta as classes de form elements. Adicionaremos o attr data-is-toggle para o nosso AMD customizar.
+            $mform->addElement('advcheckbox', 'col_' . $col->id, $col->name, '', ['group' => 1, 'data-is-toggle' => '1'], [0, 1]);
 
-        $mform->addElement('advcheckbox', 'col_inicio', get_string('colstart', 'report_lumniareport'), '', ['group' => 1], [0, 1]);
-        $mform->addElement('advcheckbox', 'col_fim', get_string('colend', 'report_lumniareport'), '', ['group' => 1], [0, 1]);
+            // O Status vem checado por padrão (ou outros base, se necessário)
+            if ($col->id === 'status') {
+                $mform->setDefault('col_' . $col->id, 1);
+            }
+        }
 
         // PDF Background Upload
         $mform->addElement('header', 'pdf_hdr', get_string('pdfsettings', 'report_lumniareport'));

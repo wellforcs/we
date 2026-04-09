@@ -9,7 +9,19 @@ define(['jquery'], function($) {
 
     var init = function() {
         var formatSelect = $('#id_format_export');
-        var toggles = $('input[type="checkbox"][name^="col_"]');
+        var toggles = $('input[type="checkbox"][data-is-toggle="1"]');
+
+        // Formata visualmente como "toggles/switches" injetando as classes do bootstrap.
+        toggles.each(function() {
+            var $parent = $(this).closest('.form-check');
+            if ($parent.length > 0) {
+                $parent.addClass('form-switch');
+            } else {
+                // Caso o Moodle não use form-check nativamente no advcheckbox neste tema.
+                $(this).parent().addClass('form-check form-switch');
+                $(this).addClass('form-check-input');
+            }
+        });
 
         function checkPdfLimit() {
             if (formatSelect.val() === 'pdf') {

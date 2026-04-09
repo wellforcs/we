@@ -36,20 +36,29 @@ if ($mform->is_cancelled()) {
         if (!empty($datafim)) {
             $urlparams['datafim'] = date('Y-m-d', $datafim);
         }
-        if (!empty($data->col_status)) { $urlparams['col_status'] = 1; }
-        if (!empty($data->col_inicio)) { $urlparams['col_inicio'] = 1; }
-        if (!empty($data->col_fim)) { $urlparams['col_fim'] = 1; }
+        // Capturar o valor literal dos checkboxes dinâmicos (podem ser 0 ou 1) para repassar explícitamente
+        require_once(__DIR__ . '/lib.php');
+        $available_cols = report_lumniareport_get_available_columns();
+        foreach ($available_cols as $colkey => $col) {
+            $prop = 'col_' . $colkey;
+            $urlparams[$prop] = isset($data->$prop) ? $data->$prop : 0;
+        }
 
         redirect(new moodle_url('/report/lumniareport/index.php', $urlparams));
     }
 
     $format = isset($data->format_export) ? $data->format_export : 'csv';
 
-    // Toggles colunas
+    // Toggles colunas dinâmicas para exportação
+    require_once(__DIR__ . '/lib.php');
+    $available_cols = report_lumniareport_get_available_columns();
     $colunas = [];
-    if (!empty($data->col_status)) { $colunas[] = 'status'; }
-    if (!empty($data->col_inicio)) { $colunas[] = 'inicio'; }
-    if (!empty($data->col_fim)) { $colunas[] = 'fim'; }
+    foreach ($available_cols as $colkey => $col) {
+        $prop = 'col_' . $colkey;
+        if (!empty($data->$prop)) {
+            $colunas[] = $colkey;
+        }
+    }
 } else {
     redirect(new moodle_url('/report/lumniareport/index.php', ['course' => $courseid]));
 }
@@ -76,6 +85,17 @@ if (!empty($datafim)) {
     }
 }
 
+// Buscamos os campos de user_info_data se houver perfil customizado
+$customfields_sql_select = "";
+$customfields_sql_join = "";
+foreach ($available_cols as $col) {
+    if ($col->type === 'custom') {
+        $join_alias = "ud_" . $col->fieldid;
+        $customfields_sql_select .= ", {$join_alias}.data AS custom_{$col->fieldid} ";
+        $customfields_sql_join .= " LEFT JOIN {user_info_data} {$join_alias} ON {$join_alias}.userid = u.id AND {$join_alias}.fieldid = {$col->fieldid} ";
+    }
+}
+
 $sql = "
     SELECT
         u.id,
@@ -84,10 +104,12 @@ $sql = "
         u.email,
         cc.timestarted,
         cc.timecompleted
+        {$customfields_sql_select}
     FROM {user} u
     JOIN {user_enrolments} ue ON ue.userid = u.id
     JOIN {enrol} e ON e.id = ue.enrolid
     LEFT JOIN {course_completions} cc ON cc.userid = u.id AND cc.course = e.courseid
+    {$customfields_sql_join}
     WHERE e.courseid = :courseid
       AND u.deleted = 0
       AND u.suspended = 0
@@ -104,9 +126,12 @@ $header = [
     get_string('colname', 'report_lumniareport'),
     get_string('colemail', 'report_lumniareport')
 ];
-if (in_array('status', $colunas)) { $header[] = get_string('colstatus', 'report_lumniareport'); }
-if (in_array('inicio', $colunas)) { $header[] = get_string('colstart', 'report_lumniareport'); }
-if (in_array('fim', $colunas)) { $header[] = get_string('colend', 'report_lumniareport'); }
+
+foreach ($colunas as $col_id) {
+    if (isset($available_cols[$col_id])) {
+        $header[] = $available_cols[$col_id]->name;
+    }
+}
 
 $export_data[] = $header;
 
@@ -125,14 +150,17 @@ foreach ($users as $u) {
 
     $row = [fullname($u), $u->email];
 
-    if (in_array('status', $colunas)) {
-        $row[] = $status;
-    }
-    if (in_array('inicio', $colunas)) {
-        $row[] = !empty($u->timestarted) ? userdate($u->timestarted) : '-';
-    }
-    if (in_array('fim', $colunas)) {
-        $row[] = !empty($u->timecompleted) ? userdate($u->timecompleted) : '-';
+    foreach ($colunas as $col_id) {
+        if ($col_id === 'status') {
+            $row[] = $status;
+        } elseif ($col_id === 'inicio') {
+            $row[] = !empty($u->timestarted) ? userdate($u->timestarted) : '-';
+        } elseif ($col_id === 'fim') {
+            $row[] = !empty($u->timecompleted) ? userdate($u->timecompleted) : '-';
+        } elseif (isset($available_cols[$col_id]) && $available_cols[$col_id]->type === 'custom') {
+            $custom_field_prop = 'custom_' . $available_cols[$col_id]->fieldid;
+            $row[] = isset($u->$custom_field_prop) ? $u->$custom_field_prop : '-';
+        }
     }
 
     $export_data[] = $row;

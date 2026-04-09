@@ -9,6 +9,7 @@
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
+require_once(__DIR__ . '/lib.php');
 require_once(__DIR__ . '/classes/form/export_form.php');
 
 $courseid = optional_param('course', 0, PARAM_INT);
@@ -48,9 +49,15 @@ echo $OUTPUT->heading(get_string('dashboardandexport', 'report_lumniareport'));
 // Obter filtros da URL, se aplicáveis.
 $filter_datainicio = optional_param('datainicio', '', PARAM_TEXT);
 $filter_datafim = optional_param('datafim', '', PARAM_TEXT);
-$filter_col_status = optional_param('col_status', 1, PARAM_INT);
-$filter_col_inicio = optional_param('col_inicio', 0, PARAM_INT);
-$filter_col_fim = optional_param('col_fim', 0, PARAM_INT);
+
+// Obter dinamicamente as colunas do formulário
+$available_cols = report_lumniareport_get_available_columns();
+$filter_cols = [];
+foreach ($available_cols as $colkey => $col) {
+    // Por padrão o status vem ativado
+    $default = ($colkey === 'status') ? 1 : 0;
+    $filter_cols[$colkey] = optional_param('col_' . $colkey, $default, PARAM_INT);
+}
 
 // Obter dados dinâmicos de conclusão para o dashboard, se em contexto de curso.
 $notstarted = 0;
@@ -83,6 +90,16 @@ if ($courseid) {
         }
     }
 
+    $customfields_sql_select = "";
+    $customfields_sql_join = "";
+    foreach ($available_cols as $col) {
+        if ($col->type === 'custom') {
+            $join_alias = "ud_" . $col->fieldid;
+            $customfields_sql_select .= ", {$join_alias}.data AS custom_{$col->fieldid} ";
+            $customfields_sql_join .= " LEFT JOIN {user_info_data} {$join_alias} ON {$join_alias}.userid = u.id AND {$join_alias}.fieldid = {$col->fieldid} ";
+        }
+    }
+
     $sql = "
         SELECT
             u.id,
@@ -91,10 +108,12 @@ if ($courseid) {
             u.email,
             cc.timestarted,
             cc.timecompleted
+            {$customfields_sql_select}
         FROM {user} u
         JOIN {user_enrolments} ue ON ue.userid = u.id
         JOIN {enrol} e ON e.id = ue.enrolid
         LEFT JOIN {course_completions} cc ON cc.userid = u.id AND cc.course = e.courseid
+        {$customfields_sql_join}
         WHERE e.courseid = :courseid
           AND u.deleted = 0
           AND u.suspended = 0
@@ -166,10 +185,10 @@ if ($courseid) {
         'course' => $courseid,
         'datainicio' => $filter_datainicio ? strtotime($filter_datainicio) : 0,
         'datafim' => $filter_datafim ? strtotime($filter_datafim) : 0,
-        'col_status' => $filter_col_status,
-        'col_inicio' => $filter_col_inicio,
-        'col_fim' => $filter_col_fim,
     ];
+    foreach ($filter_cols as $colkey => $val) {
+        $initialdata['col_' . $colkey] = $val;
+    }
     $mform->set_data($initialdata);
 
     $mform->display();
@@ -181,25 +200,20 @@ if ($courseid) {
     $PAGE->requires->js_call_amd('report_lumniareport/export_ui', 'init');
 
     // Tabela de Dados Simplificada com colunas dinâmicas
+    echo html_writer::start_tag('div', ['class' => 'table-responsive']);
     echo html_writer::start_tag('table', ['class' => 'table table-striped table-hover']);
     echo html_writer::start_tag('thead');
     echo html_writer::start_tag('tr');
     echo html_writer::tag('th', get_string('colname', 'report_lumniareport'));
     echo html_writer::tag('th', get_string('colemail', 'report_lumniareport'));
 
-    // Adicionar cabeçalhos opcionais baseados na seleção do usuário.
+    // Adicionar cabeçalhos opcionais baseados na seleção do usuário (incluindo custom fields).
     $colspan = 2;
-    if ($filter_col_status) {
-        echo html_writer::tag('th', get_string('colstatus', 'report_lumniareport'));
-        $colspan++;
-    }
-    if ($filter_col_inicio) {
-        echo html_writer::tag('th', get_string('colstart', 'report_lumniareport'));
-        $colspan++;
-    }
-    if ($filter_col_fim) {
-        echo html_writer::tag('th', get_string('colend', 'report_lumniareport'));
-        $colspan++;
+    foreach ($available_cols as $colkey => $col) {
+        if (!empty($filter_cols[$colkey])) {
+            echo html_writer::tag('th', $col->name);
+            $colspan++;
+        }
     }
 
     echo html_writer::end_tag('tr');
@@ -221,17 +235,23 @@ if ($courseid) {
         echo html_writer::tag('td', $fullname);
         echo html_writer::tag('td', $u->email);
 
-        // Exibir células das colunas opcionais.
-        if ($filter_col_status) {
-            echo html_writer::tag('td', $status);
-        }
-        if ($filter_col_inicio) {
-            $inicio_text = !empty($u->timestarted) ? userdate($u->timestarted) : '-';
-            echo html_writer::tag('td', $inicio_text);
-        }
-        if ($filter_col_fim) {
-            $fim_text = !empty($u->timecompleted) ? userdate($u->timecompleted) : '-';
-            echo html_writer::tag('td', $fim_text);
+        // Exibir células das colunas opcionais (nativas e custom fields)
+        foreach ($available_cols as $colkey => $col) {
+            if (!empty($filter_cols[$colkey])) {
+                if ($colkey === 'status') {
+                    echo html_writer::tag('td', $status);
+                } elseif ($colkey === 'inicio') {
+                    $inicio_text = !empty($u->timestarted) ? userdate($u->timestarted) : '-';
+                    echo html_writer::tag('td', $inicio_text);
+                } elseif ($colkey === 'fim') {
+                    $fim_text = !empty($u->timecompleted) ? userdate($u->timecompleted) : '-';
+                    echo html_writer::tag('td', $fim_text);
+                } elseif ($col->type === 'custom') {
+                    $custom_field_prop = 'custom_' . $col->fieldid;
+                    $custom_text = isset($u->$custom_field_prop) ? $u->$custom_field_prop : '-';
+                    echo html_writer::tag('td', $custom_text);
+                }
+            }
         }
 
         echo html_writer::end_tag('tr');
@@ -245,6 +265,7 @@ if ($courseid) {
 
     echo html_writer::end_tag('tbody');
     echo html_writer::end_tag('table');
+    echo html_writer::end_div(); // Fim do div.table-responsive
 
     echo html_writer::end_div(); // Fim da seção de dados.
 

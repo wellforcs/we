@@ -10,19 +10,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
-    // Para reports, em vez de admin_externalpage que tenta injetar settings sem layout,
-    // criamos uma página de configuração real informando e direcionando o admin.
-    $settings = new admin_settingpage('reportlumniareport', get_string('pluginname', 'report_lumniareport'));
-
-    // Adicionamos um texto HTML no painel administrativo ensinando e direcionando o admin.
-    $reporturl = new moodle_url('/report/lumniareport/index.php');
-    $linkhtml = html_writer::link($reporturl, get_string('pluginname', 'report_lumniareport'), ['class' => 'btn btn-primary']);
-
-    $settings->add(new admin_setting_heading(
-        'reportlumniareport_heading',
+    // Registra a página como admin_externalpage para compatibilidade com admin_externalpage_setup no index.php
+    $ADMIN->add('reports', new admin_externalpage(
+        'reportlumniareport',
         get_string('pluginname', 'report_lumniareport'),
-        $linkhtml
+        new moodle_url('/report/lumniareport/index.php'),
+        'report/lumniareport:view'
     ));
-
-    $ADMIN->add('reports', $settings);
 }
