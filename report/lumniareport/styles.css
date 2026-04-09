@@ -2,24 +2,26 @@
  * Styles for Lumniareport to force checkboxes as toggle switches
  */
 
-/* Convert Moodle advcheckbox with class lumnia-toggle to a visual switch */
+/* Esconde completamente o comportamento nativo */
 form.mform input[type="checkbox"].lumnia-toggle {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    width: 3rem;
-    height: 1.5rem;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    width: 3rem !important;
+    height: 1.5rem !important;
     background-color: #dee2e6;
-    border-radius: 2rem;
+    border-radius: 2rem !important;
     position: relative;
     cursor: pointer;
-    outline: none;
-    border: none;
+    outline: none !important;
+    border: none !important;
     transition: background-color 0.2s ease-in-out;
-    margin-right: 10px;
+    margin: 0 10px 0 0 !important;
     vertical-align: middle;
+    display: inline-block;
 }
 
+/* O "Pino" branco (knob) do interruptor */
 form.mform input[type="checkbox"].lumnia-toggle::after {
     content: '';
     position: absolute;
@@ -33,10 +35,19 @@ form.mform input[type="checkbox"].lumnia-toggle::after {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Estado ligado */
 form.mform input[type="checkbox"].lumnia-toggle:checked {
-    background-color: #0d6efd; /* Moodle Boost Primary Color */
+    background-color: #0d6efd !important; /* Moodle Boost Primary Color */
 }
 
+/* Movimento do "pino" branco para a direita */
 form.mform input[type="checkbox"].lumnia-toggle:checked::after {
     transform: translateX(1.5rem);
+}
+
+/* Centraliza o rótulo com o checkbox para que não quebrem as linhas do form Moodle */
+form.mform .fitem:has(input[type="checkbox"].lumnia-toggle) {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
 }

@@ -43,6 +43,10 @@ if ($courseid) {
     $PAGE->set_heading(report_lumniareport_get_string('pluginname', 'Lumniareport'));
 }
 
+// Carregar estilos CSS do plugin e módulo JS AMD ANTES de exibir o header
+$PAGE->requires->css(new moodle_url('/report/lumniareport/styles.css'));
+$PAGE->requires->js_call_amd('report_lumniareport/export_ui', 'init');
+
 echo $OUTPUT->header();
 echo $OUTPUT->heading(report_lumniareport_get_string('dashboardandexport', 'Dashboard e Exportação'));
 
@@ -203,10 +207,6 @@ if ($courseid) {
 
     echo html_writer::end_div();
     echo html_writer::end_div();
-
-    // Carregar estilos CSS do plugin e módulo JS AMD
-    $PAGE->requires->css(new moodle_url('/report/lumniareport/styles.css'));
-    $PAGE->requires->js_call_amd('report_lumniareport/export_ui', 'init');
 
     // Tabela de Dados Simplificada com colunas dinâmicas
     echo html_writer::start_tag('div', ['class' => 'table-responsive']);
