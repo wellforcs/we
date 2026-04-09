@@ -1,0 +1,42 @@
+/*
+ * Styles for Lumniareport to force checkboxes as toggle switches
+ */
+
+/* Convert Moodle advcheckbox with class lumnia-toggle to a visual switch */
+form.mform input[type="checkbox"].lumnia-toggle {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 3rem;
+    height: 1.5rem;
+    background-color: #dee2e6;
+    border-radius: 2rem;
+    position: relative;
+    cursor: pointer;
+    outline: none;
+    border: none;
+    transition: background-color 0.2s ease-in-out;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+form.mform input[type="checkbox"].lumnia-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: calc(1.5rem - 4px);
+    height: calc(1.5rem - 4px);
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.2s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+form.mform input[type="checkbox"].lumnia-toggle:checked {
+    background-color: #0d6efd; /* Moodle Boost Primary Color */
+}
+
+form.mform input[type="checkbox"].lumnia-toggle:checked::after {
+    transform: translateX(1.5rem);
+}

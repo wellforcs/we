@@ -100,6 +100,13 @@ if ($courseid) {
         }
     }
 
+    $userextended_sql_select = "";
+    foreach ($available_cols as $col) {
+        if ($col->type === 'user_extended') {
+            $userextended_sql_select .= ", u.{$col->fieldid} AS user_{$col->fieldid} ";
+        }
+    }
+
     $sql = "
         SELECT
             u.id,
@@ -109,6 +116,7 @@ if ($courseid) {
             cc.timestarted,
             cc.timecompleted
             {$customfields_sql_select}
+            {$userextended_sql_select}
         FROM {user} u
         JOIN {user_enrolments} ue ON ue.userid = u.id
         JOIN {enrol} e ON e.id = ue.enrolid
@@ -196,7 +204,8 @@ if ($courseid) {
     echo html_writer::end_div();
     echo html_writer::end_div();
 
-    // Carregar módulo JS AMD
+    // Carregar estilos CSS do plugin e módulo JS AMD
+    $PAGE->requires->css(new moodle_url('/report/lumniareport/styles.css'));
     $PAGE->requires->js_call_amd('report_lumniareport/export_ui', 'init');
 
     // Tabela de Dados Simplificada com colunas dinâmicas
@@ -259,6 +268,10 @@ if ($courseid) {
                     $custom_field_prop = 'custom_' . $col->fieldid;
                     $custom_text = isset($u->$custom_field_prop) ? $u->$custom_field_prop : '-';
                     echo html_writer::tag('td', $custom_text);
+                } elseif ($col->type === 'user_extended') {
+                    $extended_field_prop = 'user_' . $col->fieldid;
+                    $extended_text = isset($u->$extended_field_prop) ? $u->$extended_field_prop : '-';
+                    echo html_writer::tag('td', $extended_text);
                 }
             }
         }

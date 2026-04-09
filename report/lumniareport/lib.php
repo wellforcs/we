@@ -65,6 +65,25 @@ function report_lumniareport_get_available_columns() {
         ]
     ];
 
+    // Buscar campos nativos estendidos do banco (user)
+    $extended_user_fields = [
+        'city' => report_lumniareport_get_string('city', 'Cidade'),
+        'country' => report_lumniareport_get_string('country', 'País'),
+        'institution' => report_lumniareport_get_string('institution', 'Instituição'),
+        'department' => report_lumniareport_get_string('department', 'Departamento'),
+        'phone1' => report_lumniareport_get_string('phone1', 'Telefone'),
+        'address' => report_lumniareport_get_string('address', 'Endereço')
+    ];
+
+    foreach ($extended_user_fields as $field => $label) {
+        $columns['user_' . $field] = (object)[
+            'id' => 'user_' . $field,
+            'name' => $label,
+            'type' => 'user_extended',
+            'fieldid' => $field
+        ];
+    }
+
     // Buscar campos de perfil personalizados do Moodle (user_info_field)
     if ($DB->get_manager()->table_exists('user_info_field')) {
         $profilefields = $DB->get_records('user_info_field', null, 'sortorder ASC', 'id, shortname, name');

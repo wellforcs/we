@@ -96,6 +96,14 @@ foreach ($available_cols as $col) {
     }
 }
 
+// Buscamos os campos estendidos nativos do usuário (cidade, país, etc.)
+$userextended_sql_select = "";
+foreach ($available_cols as $col) {
+    if ($col->type === 'user_extended') {
+        $userextended_sql_select .= ", u.{$col->fieldid} AS user_{$col->fieldid} ";
+    }
+}
+
 $sql = "
     SELECT
         u.id,
@@ -105,6 +113,7 @@ $sql = "
         cc.timestarted,
         cc.timecompleted
         {$customfields_sql_select}
+        {$userextended_sql_select}
     FROM {user} u
     JOIN {user_enrolments} ue ON ue.userid = u.id
     JOIN {enrol} e ON e.id = ue.enrolid
@@ -169,6 +178,9 @@ foreach ($users as $u) {
         } elseif (isset($available_cols[$col_id]) && $available_cols[$col_id]->type === 'custom') {
             $custom_field_prop = 'custom_' . $available_cols[$col_id]->fieldid;
             $row[] = isset($u->$custom_field_prop) ? $u->$custom_field_prop : '-';
+        } elseif (isset($available_cols[$col_id]) && $available_cols[$col_id]->type === 'user_extended') {
+            $extended_field_prop = 'user_' . $available_cols[$col_id]->fieldid;
+            $row[] = isset($u->$extended_field_prop) ? $u->$extended_field_prop : '-';
         }
     }
 

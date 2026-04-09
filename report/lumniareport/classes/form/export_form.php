@@ -50,8 +50,8 @@ class export_form extends \moodleform {
 
         $available_cols = report_lumniareport_get_available_columns();
         foreach ($available_cols as $colkey => $col) {
-            // Em HTML, Moodle injeta as classes de form elements. Adicionaremos o attr data-is-toggle para o nosso AMD customizar.
-            $mform->addElement('advcheckbox', 'col_' . $col->id, $col->name, '', ['group' => 1, 'data-is-toggle' => '1'], [0, 1]);
+            // Em HTML, Moodle injeta as classes de form elements. Adicionaremos o attr data-is-toggle e as classes personalizadas via CSS
+            $mform->addElement('advcheckbox', 'col_' . $col->id, $col->name, '', ['group' => 1, 'class' => 'lumnia-toggle', 'data-is-toggle' => '1'], [0, 1]);
 
             // O Status vem checado por padrão (ou outros base, se necessário)
             if ($col->id === 'status') {
