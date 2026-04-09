@@ -8,24 +8,54 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
+require_once($CFG->libdir . '/pdflib.php'); // Carrega TCPDF (pdf class) do Moodle
+require_once(__DIR__ . '/classes/form/export_form.php');
 
 $courseid = required_param('course', PARAM_INT);
-$format = optional_param('format_export', 'csv', PARAM_ALPHA);
-$datainicio = optional_param('datainicio', '', PARAM_TEXT);
-$datafim = optional_param('datafim', '', PARAM_TEXT);
-$colunas = optional_param_array('colunas', [], PARAM_ALPHA); // Array de colunas extras (status, inicio, fim)
-
 $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 require_login($course);
 $context = context_course::instance($course->id);
 require_capability('report/lumniareport:export', $context);
 
-// Prepara SQL de dados e filtros de data (igual index.php).
+// Processa o form
+$form_action = new moodle_url('/report/lumniareport/export.php');
+$mform = new \report_lumniareport\form\export_form($form_action, null, 'post');
+
+if ($mform->is_cancelled()) {
+    redirect(new moodle_url('/report/lumniareport/index.php', ['course' => $courseid]));
+} else if ($data = $mform->get_data()) {
+    $datainicio = isset($data->datainicio) ? $data->datainicio : 0;
+    $datafim = isset($data->datafim) ? $data->datafim : 0;
+
+    // Interceptar ação "Aplicar Filtros" para atualizar a tela em vez de exportar
+    if (!empty($data->applyfilters)) {
+        $urlparams = ['course' => $courseid];
+        if (!empty($datainicio)) {
+            $urlparams['datainicio'] = date('Y-m-d', $datainicio);
+        }
+        if (!empty($datafim)) {
+            $urlparams['datafim'] = date('Y-m-d', $datafim);
+        }
+        redirect(new moodle_url('/report/lumniareport/index.php', $urlparams));
+    }
+
+    $format = isset($data->format_export) ? $data->format_export : 'csv';
+
+    // Toggles colunas
+    $colunas = [];
+    if (!empty($data->col_status)) { $colunas[] = 'status'; }
+    if (!empty($data->col_inicio)) { $colunas[] = 'inicio'; }
+    if (!empty($data->col_fim)) { $colunas[] = 'fim'; }
+} else {
+    redirect(new moodle_url('/report/lumniareport/index.php', ['course' => $courseid]));
+}
+
+// Prepara SQL de dados e filtros de data.
 $params = ['courseid' => $courseid];
 $datefiltersql = "";
 
 if (!empty($datainicio)) {
-    $timestamp_inicio = strtotime($datainicio);
+    $timestamp_inicio = $datainicio;
     if ($timestamp_inicio) {
         $datefiltersql .= " AND (cc.timestarted >= :datainicio OR cc.timecompleted >= :datainicio2) ";
         $params['datainicio'] = $timestamp_inicio;
@@ -34,7 +64,7 @@ if (!empty($datainicio)) {
 }
 
 if (!empty($datafim)) {
-    $timestamp_fim = strtotime($datafim) + 86399;
+    $timestamp_fim = $datafim + 86399; // Final do dia
     if ($timestamp_fim) {
         $datefiltersql .= " AND (cc.timestarted <= :datafim OR cc.timecompleted <= :datafim2) ";
         $params['datafim'] = $timestamp_fim;
@@ -66,10 +96,13 @@ $users = $DB->get_records_sql($sql, $params);
 $export_data = [];
 
 // Header Dinâmico
-$header = ['Nome', 'Email'];
-if (in_array('status', $colunas)) { $header[] = 'Status'; }
-if (in_array('inicio', $colunas)) { $header[] = 'Data de Início'; }
-if (in_array('fim', $colunas)) { $header[] = 'Data de Conclusão'; }
+$header = [
+    get_string('colname', 'report_lumniareport'),
+    get_string('colemail', 'report_lumniareport')
+];
+if (in_array('status', $colunas)) { $header[] = get_string('colstatus', 'report_lumniareport'); }
+if (in_array('inicio', $colunas)) { $header[] = get_string('colstart', 'report_lumniareport'); }
+if (in_array('fim', $colunas)) { $header[] = get_string('colend', 'report_lumniareport'); }
 
 $export_data[] = $header;
 
@@ -103,53 +136,70 @@ foreach ($users as $u) {
 
 $filename = 'relatorio_' . $course->shortname . '_' . date('Ymd_His');
 
-// Tratamento de tipos de arquivo (Mockups Funcionais para o ambiente base)
+// Tratamento de tipos de arquivo (Production Ready)
 if ($format === 'xlsx') {
-    $filename .= '.xlsx';
-    // Como não temos o PhpSpreadsheet carregado no sandbox isolado,
-    // emitimos um mockup usando headers de Excel e output formatado em tabela HTML/XML básico
-    // que é legível nativamente por Excel como fallback de legado.
-    // Num ambiente Moodle real, a chamada seria \core\dataformat::download_data($filename, 'excel', $header, $export_data);
-    header('Content-Type: application/vnd.ms-excel');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-
-    echo '<table>';
-    foreach ($export_data as $row) {
-        echo '<tr>';
-        foreach ($row as $col) {
-            echo '<td>' . htmlspecialchars($col) . '</td>';
-        }
-        echo '</tr>';
-    }
-    echo '</table>';
+    \core\dataformat::download_data($filename, 'excel', $header, $export_data);
     die();
 
 } elseif ($format === 'pdf') {
-    $filename .= '.pdf';
-    // Sem biblioteca TCPDF carregada nativamente no sandbox,
-    // emitimos headers e fallback. Num Moodle vivo, seria instanciado "new pdf()".
-    header('Content-type: application/pdf');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    // Gerar o PDF usando a classe nativa TCPDF (pdf) do Moodle.
+    $pdf = new pdf();
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    $pdf->AddPage();
 
-    // String mágica PDF (Mínimo de formatação pra não corromper download instantâneo em alguns navegadores de teste)
-    echo "%PDF-1.4\n";
-    echo "%Criado por Lumniareport Fallback\n";
-    echo "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
+    // Tratamento da imagem de fundo
+    $draftitemid = file_get_submitted_draft_itemid('pdfbackground_filemanager');
+    $usercontext = context_user::instance($USER->id);
+    $fs = get_file_storage();
+    $files = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftitemid, 'id DESC', false);
+
+    if (!empty($files)) {
+        $file = reset($files);
+        // Usa temporary file handling for PDF image processing
+        $tmpfile = make_request_directory() . '/' . $file->get_filename();
+        $file->copy_content_to($tmpfile);
+
+        // Aplica a imagem como background cobrindo a página A4 (210x297mm)
+        $pdf->Image($tmpfile, 0, 0, 210, 297, '', '', '', false, 300, '', false, false, 0);
+    }
+
+    // Configurar Fonte PDF
+    $pdf->SetFont('helvetica', 'B', 16);
+    $pdf->Cell(0, 10, get_string('dashboardandexport', 'report_lumniareport'), 0, 1, 'C');
+    $pdf->Ln(10);
+
+    $pdf->SetFont('helvetica', 'B', 12);
+
+    // Tabela: Cabeçalho
+    // Dividir a largura da página (ex: 190mm) com base nas colunas (2 fixas + extras).
+    $colwidth = 190 / count($header);
+    foreach ($header as $col_title) {
+        $pdf->Cell($colwidth, 7, $col_title, 1, 0, 'C');
+    }
+    $pdf->Ln();
+
+    // Tabela: Linhas
+    $pdf->SetFont('helvetica', '', 10);
+    foreach ($export_data as $index => $row) {
+        // Pular o cabeçalho que foi pro export_data (posição 0)
+        if ($index === 0) continue;
+
+        foreach ($row as $cell_data) {
+            // Usar MultiCell para lidar com nomes longos/quebra de linha conforme especificado
+            // Simulando a mesma altura na linha inteira para MVP de PDF
+            $x = $pdf->GetX();
+            $y = $pdf->GetY();
+            $pdf->MultiCell($colwidth, 10, $cell_data, 1, 'L', false, 0);
+        }
+        $pdf->Ln();
+    }
+
+    $pdf->Output($filename . '.pdf', 'D');
     die();
 
 } else {
-    // CSV Padrão (Fallback e Opção Oficial)
-    $filename .= '.csv';
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-
-    // Adiciona BOM para UTF-8 conforme especificação do plano.
-    echo "\xEF\xBB\xBF";
-
-    $output = fopen('php://output', 'w');
-    foreach ($export_data as $row) {
-        fputcsv($output, $row);
-    }
-    fclose($output);
+    // CSV usando dataformat do Core
+    \core\dataformat::download_data($filename, 'csv', $header, $export_data);
     die();
 }

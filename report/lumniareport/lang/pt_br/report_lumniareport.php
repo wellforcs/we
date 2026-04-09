@@ -47,3 +47,6 @@ $string['applyfilter'] = 'Aplicar Filtro em Tela';
 $string['nodatafound'] = 'Nenhum dado encontrado para o curso.';
 $string['colname'] = 'Nome';
 $string['colemail'] = 'Email';
+$string['pdfsettings'] = 'Configurações de PDF';
+$string['pdfbackground'] = 'Imagem de Fundo (PDF)';
+$string['selectcourse'] = 'Selecione um curso para visualizar o relatório';

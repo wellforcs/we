@@ -9,6 +9,7 @@
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
+require_once(__DIR__ . '/classes/form/export_form.php');
 
 $courseid = optional_param('course', 0, PARAM_INT);
 
@@ -150,64 +151,28 @@ if ($courseid) {
     echo html_writer::start_div('mt-4');
     echo html_writer::tag('h3', get_string('dashboardandexport', 'report_lumniareport'));
 
-    // Painel de Filtros e Exportação (HTML Nativo)
+    // Painel de Filtros e Exportação (Usando Moodle Form API)
     echo html_writer::start_div('card mb-4');
     echo html_writer::start_div('card-body');
-    echo html_writer::tag('h5', get_string('filtersexport', 'report_lumniareport'), ['class' => 'card-title']);
 
     $form_action = new moodle_url('/report/lumniareport/export.php');
-    echo '<form method="GET" action="' . $form_action . '" id="form-export-lumniareport">';
-    echo '<input type="hidden" name="course" value="' . $courseid . '">';
+    $mform = new \report_lumniareport\form\export_form($form_action, null, 'post');
 
-    echo '<div class="row mb-3">';
-    echo '  <div class="col-md-3">';
-    echo '    <label for="datainicio" class="form-label">' . get_string('startdate', 'report_lumniareport') . '</label>';
-    echo '    <input type="date" id="datainicio" name="datainicio" class="form-control" value="' . s($filter_datainicio) . '">';
-    echo '  </div>';
-    echo '  <div class="col-md-3">';
-    echo '    <label for="datafim" class="form-label">' . get_string('enddate', 'report_lumniareport') . '</label>';
-    echo '    <input type="date" id="datafim" name="datafim" class="form-control" value="' . s($filter_datafim) . '">';
-    echo '  </div>';
-    echo '  <div class="col-md-3">';
-    echo '    <label for="format_export" class="form-label">' . get_string('format', 'report_lumniareport') . '</label>';
-    echo '    <select id="format_export" name="format_export" class="form-select">';
-    echo '      <option value="csv">CSV</option>';
-    echo '      <option value="xlsx">XLSX</option>';
-    echo '      <option value="pdf">PDF</option>';
-    echo '    </select>';
-    echo '  </div>';
-    echo '</div>';
+    // Set initial data for form
+    $initialdata = [
+        'course' => $courseid,
+        'datainicio' => $filter_datainicio ? strtotime($filter_datainicio) : 0,
+        'datafim' => $filter_datafim ? strtotime($filter_datafim) : 0,
+    ];
+    $mform->set_data($initialdata);
 
-    echo '<div class="mb-3">';
-    echo '  <p class="mb-1 fw-bold">' . get_string('additionalcols', 'report_lumniareport') . '</p>';
-    echo '  <div class="form-check form-switch form-check-inline">';
-    echo '    <input class="form-check-input coluna-toggle" type="checkbox" id="col_status" name="colunas[]" value="status" checked>';
-    echo '    <label class="form-check-label" for="col_status">' . get_string('colstatus', 'report_lumniareport') . '</label>';
-    echo '  </div>';
-    echo '  <div class="form-check form-switch form-check-inline">';
-    echo '    <input class="form-check-input coluna-toggle" type="checkbox" id="col_inicio" name="colunas[]" value="inicio">';
-    echo '    <label class="form-check-label" for="col_inicio">' . get_string('colstart', 'report_lumniareport') . '</label>';
-    echo '  </div>';
-    echo '  <div class="form-check form-switch form-check-inline">';
-    echo '    <input class="form-check-input coluna-toggle" type="checkbox" id="col_fim" name="colunas[]" value="fim">';
-    echo '    <label class="form-check-label" for="col_fim">' . get_string('colend', 'report_lumniareport') . '</label>';
-    echo '  </div>';
-    echo '</div>';
+    $mform->display();
 
-    echo '<div class="alert alert-warning d-none" id="pdf-limit-warning" role="alert">';
-    echo get_string('maxpdfcolumns', 'report_lumniareport');
-    echo '</div>';
-
-    echo '<div class="d-flex gap-2">';
-    echo '  <button type="submit" class="btn btn-primary">' . get_string('exportreport', 'report_lumniareport') . '</button>';
-    // Adicionar um botão auxiliar apenas para recarregar a tela com os filtros.
-    $current_url = new moodle_url('/report/lumniareport/index.php');
-    echo '  <button type="submit" formaction="' . $current_url . '" class="btn btn-outline-secondary">' . get_string('applyfilter', 'report_lumniareport') . '</button>';
-    echo '</div>';
-
-    echo '</form>';
     echo html_writer::end_div();
     echo html_writer::end_div();
+
+    // Carregar módulo JS AMD
+    $PAGE->requires->js_call_amd('report_lumniareport/export_ui', 'init');
 
     // Tabela de Dados Simplificada
     echo html_writer::start_tag('table', ['class' => 'table table-striped table-hover']);
@@ -248,51 +213,27 @@ if ($courseid) {
     echo html_writer::end_tag('table');
 
     echo html_writer::end_div(); // Fim da seção de dados.
+
+} else {
+    // Modo Administrador no nível do sistema: Exigir seletor de cursos.
+    echo html_writer::start_div('alert alert-info mt-4');
+    echo get_string('selectcourse', 'report_lumniareport');
+
+    // Exibir um select básico de cursos para redirecionar o admin
+    global $DB;
+    $allcourses = $DB->get_records('course', ['id' => SITEID], '', 'id', '<>'); // Ignorar o frontpage site
+    $allcourses = $DB->get_records_sql('SELECT id, shortname, fullname FROM {course} WHERE id != :siteid ORDER BY fullname ASC', ['siteid' => SITEID]);
+
+    $courselist = [];
+    foreach ($allcourses as $c) {
+        $courselist[$c->id] = $c->fullname;
+    }
+
+    $selecturl = new moodle_url('/report/lumniareport/index.php');
+    $select = new single_select($selecturl, 'course', $courselist);
+    echo $OUTPUT->render($select);
+
+    echo html_writer::end_div();
 }
-
-echo html_writer::start_tag('script');
-?>
-document.addEventListener('DOMContentLoaded', function() {
-    const formatSelect = document.getElementById('format_export');
-    const toggles = document.querySelectorAll('.coluna-toggle');
-    const warningDiv = document.getElementById('pdf-limit-warning');
-
-    function checkPdfLimit() {
-        if (formatSelect.value === 'pdf') {
-            let checkedCount = 0;
-            toggles.forEach(t => { if (t.checked) checkedCount++; });
-
-            if (checkedCount >= 2) {
-                warningDiv.classList.remove('d-none');
-                toggles.forEach(t => {
-                    if (!t.checked) {
-                        t.disabled = true;
-                    }
-                });
-            } else {
-                warningDiv.classList.add('d-none');
-                toggles.forEach(t => { t.disabled = false; });
-            }
-        } else {
-            warningDiv.classList.add('d-none');
-            toggles.forEach(t => { t.disabled = false; });
-        }
-    }
-
-    if (formatSelect) {
-        formatSelect.addEventListener('change', checkPdfLimit);
-    }
-
-    toggles.forEach(t => {
-        t.addEventListener('change', checkPdfLimit);
-    });
-
-    // Run on load
-    if (formatSelect) {
-        checkPdfLimit();
-    }
-});
-<?php
-echo html_writer::end_tag('script');
 
 echo $OUTPUT->footer();

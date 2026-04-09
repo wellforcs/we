@@ -47,3 +47,6 @@ $string['applyfilter'] = 'Apply Screen Filter';
 $string['nodatafound'] = 'No data found for this course.';
 $string['colname'] = 'Name';
 $string['colemail'] = 'Email';
+$string['pdfsettings'] = 'PDF Settings';
+$string['pdfbackground'] = 'Background Image (PDF)';
+$string['selectcourse'] = 'Select a course to view the report';
