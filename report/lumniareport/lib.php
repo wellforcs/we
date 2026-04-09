@@ -19,7 +19,7 @@ defined('MOODLE_INTERNAL') || die();
 function report_lumniareport_extend_navigation_course($navigation, $course, $coursecontext) {
     if (has_capability('report/lumniareport:view', $coursecontext)) {
         $url = new moodle_url('/report/lumniareport/index.php', ['course' => $course->id]);
-        $name = get_string('coursereport', 'report_lumniareport');
+        $name = get_string('pluginname', 'report_lumniareport');
         $reportnode = $navigation->get('coursereports');
         if ($reportnode) {
             $node = $reportnode->add(

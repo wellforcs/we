@@ -36,6 +36,10 @@ if ($mform->is_cancelled()) {
         if (!empty($datafim)) {
             $urlparams['datafim'] = date('Y-m-d', $datafim);
         }
+        if (!empty($data->col_status)) { $urlparams['col_status'] = 1; }
+        if (!empty($data->col_inicio)) { $urlparams['col_inicio'] = 1; }
+        if (!empty($data->col_fim)) { $urlparams['col_fim'] = 1; }
+
         redirect(new moodle_url('/report/lumniareport/index.php', $urlparams));
     }
 

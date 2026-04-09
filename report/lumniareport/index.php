@@ -48,6 +48,9 @@ echo $OUTPUT->heading(get_string('dashboardandexport', 'report_lumniareport'));
 // Obter filtros da URL, se aplicáveis.
 $filter_datainicio = optional_param('datainicio', '', PARAM_TEXT);
 $filter_datafim = optional_param('datafim', '', PARAM_TEXT);
+$filter_col_status = optional_param('col_status', 1, PARAM_INT);
+$filter_col_inicio = optional_param('col_inicio', 0, PARAM_INT);
+$filter_col_fim = optional_param('col_fim', 0, PARAM_INT);
 
 // Obter dados dinâmicos de conclusão para o dashboard, se em contexto de curso.
 $notstarted = 0;
@@ -163,6 +166,9 @@ if ($courseid) {
         'course' => $courseid,
         'datainicio' => $filter_datainicio ? strtotime($filter_datainicio) : 0,
         'datafim' => $filter_datafim ? strtotime($filter_datafim) : 0,
+        'col_status' => $filter_col_status,
+        'col_inicio' => $filter_col_inicio,
+        'col_fim' => $filter_col_fim,
     ];
     $mform->set_data($initialdata);
 
@@ -174,13 +180,28 @@ if ($courseid) {
     // Carregar módulo JS AMD
     $PAGE->requires->js_call_amd('report_lumniareport/export_ui', 'init');
 
-    // Tabela de Dados Simplificada
+    // Tabela de Dados Simplificada com colunas dinâmicas
     echo html_writer::start_tag('table', ['class' => 'table table-striped table-hover']);
     echo html_writer::start_tag('thead');
     echo html_writer::start_tag('tr');
     echo html_writer::tag('th', get_string('colname', 'report_lumniareport'));
     echo html_writer::tag('th', get_string('colemail', 'report_lumniareport'));
-    echo html_writer::tag('th', get_string('colstatus', 'report_lumniareport'));
+
+    // Adicionar cabeçalhos opcionais baseados na seleção do usuário.
+    $colspan = 2;
+    if ($filter_col_status) {
+        echo html_writer::tag('th', get_string('colstatus', 'report_lumniareport'));
+        $colspan++;
+    }
+    if ($filter_col_inicio) {
+        echo html_writer::tag('th', get_string('colstart', 'report_lumniareport'));
+        $colspan++;
+    }
+    if ($filter_col_fim) {
+        echo html_writer::tag('th', get_string('colend', 'report_lumniareport'));
+        $colspan++;
+    }
+
     echo html_writer::end_tag('tr');
     echo html_writer::end_tag('thead');
 
@@ -199,13 +220,26 @@ if ($courseid) {
         echo html_writer::start_tag('tr');
         echo html_writer::tag('td', $fullname);
         echo html_writer::tag('td', $u->email);
-        echo html_writer::tag('td', $status);
+
+        // Exibir células das colunas opcionais.
+        if ($filter_col_status) {
+            echo html_writer::tag('td', $status);
+        }
+        if ($filter_col_inicio) {
+            $inicio_text = !empty($u->timestarted) ? userdate($u->timestarted) : '-';
+            echo html_writer::tag('td', $inicio_text);
+        }
+        if ($filter_col_fim) {
+            $fim_text = !empty($u->timecompleted) ? userdate($u->timecompleted) : '-';
+            echo html_writer::tag('td', $fim_text);
+        }
+
         echo html_writer::end_tag('tr');
     }
 
     if (empty($users)) {
         echo html_writer::start_tag('tr');
-        echo html_writer::tag('td', get_string('nodatafound', 'report_lumniareport'), ['colspan' => '3', 'class' => 'text-center']);
+        echo html_writer::tag('td', get_string('nodatafound', 'report_lumniareport'), ['colspan' => $colspan, 'class' => 'text-center']);
         echo html_writer::end_tag('tr');
     }
 
